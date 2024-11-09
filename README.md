@@ -11,7 +11,8 @@
 ## 2. Запуск
 Для запуска проекта выполните следующие команды:
 - git clone https://github.com/vicoder98/chat_project.git
-- docker-compose up --build  
+- docker-compose up --build
+- localhost:8000
     
 ## 3. Автор
 - Нгуен Тхе Вьет
