@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room - {{ room.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #messages {
+            border: 1px solid black;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 5px;
+            background-color: #f9f9f9;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 100px);
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        let ws;
+
+        function connectToWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws/{{ room.name }}`);
+
+            ws.onmessage = function (event) {
+                const messagesDiv = document.getElementById("messages");
+                const message = document.createElement("p");
+                message.textContent = event.data;
+                messagesDiv.appendChild(message);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            };
+
+            ws.onopen = function () {
+                ws.send("{{ user.username }} has joined the chat.");
+            };
+
+            ws.onclose = function () {
+                console.log("Disconnected from room:", "{{ room.name }}");
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("message-input");
+            if (ws && input.value) {
+                ws.send(input.value);
+                input.value = "";
+            }
+        }
+    </script>
+</head>
+
+<body onload="connectToWebSocket()">
+    <h1>Room: {{ room.name }}</h1>
+    <div id="messages">
+        {% for message in messages %}
+        <p>{{ message.username }}: {{ message.content }}</p>
+        {% endfor %}
+    </div>
+    <input type="text" id="message-input" placeholder="Type a message..."
+        onkeypress="if(event.key === 'Enter') sendMessage()">
+    <button onclick="sendMessage()">Send</button>
+</body>
+
+</html>

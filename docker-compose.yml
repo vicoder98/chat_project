@@ -1,0 +1,49 @@
+version: '3.8'  # Đảm bảo đúng phiên bản
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: chatapp
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql  
+    networks:
+      - virtual-net
+
+  website:
+    build: ./website
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/chatapp"
+    networks:
+      - virtual-net
+
+  chat:
+    build: ./chat
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/chatapp"
+    networks:
+      - virtual-net
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"  
+    depends_on:
+      - website
+      - chat
+    networks:
+      - virtual-net
+
+networks:
+  virtual-net:
+    driver: bridge

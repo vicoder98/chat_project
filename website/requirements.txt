@@ -1,0 +1,11 @@
+fastapi
+sqlalchemy
+jinja2
+pydantic
+pyjwt
+psycopg2-binary
+uvicorn
+python-multipart 
+uvicorn[standard]
+websockets
+passlib[bcrypt]

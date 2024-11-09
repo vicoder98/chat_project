@@ -1,0 +1,20 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE chat_rooms (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE messages (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    room_id INTEGER REFERENCES chat_rooms(id) ON DELETE CASCADE,
+    username VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

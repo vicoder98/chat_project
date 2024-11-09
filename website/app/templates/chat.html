@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-list-container {
+            width: 30%;
+            background-color: #f8f8f8;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-list-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .user-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-search input {
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            flex: 1;
+        }
+
+        .user-search button {
+            padding: 8px 16px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .user-search button:hover {
+            background-color: #0056b3;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chat-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .chat-item .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 15px;
+        }
+
+        .chat-item .chat-info {
+            flex: 1;
+        }
+
+        .chat-item .chat-info .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .chat-item .chat-info .last-message {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .chat-window {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+        }
+
+        .message {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .message .content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.sent .content {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+
+        .message.received .content {
+            background-color: #e5e5ea;
+            color: black;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-input {
+            padding: 15px;
+            display: flex;
+            border-top: 1px solid #ddd;
+            background-color: #fff;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chat-input button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Style for Create Chat */
+        .create-chat-container {
+            padding: 10px;
+            background-color: #f8f8f8;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .create-chat-container input {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .create-chat-container button {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .create-chat-container button:hover {
+            background-color: #218838;
+        }
+    </style>
+    <script>
+        let ws; // Подключение WebSocket
+        let currentRoom = ""; // Отслеживание текущей комнаты, в которую вошел пользователь
+
+        function joinRoom(roomName) {
+            if (ws) {
+                ws.close(); // Закрываем текущее подключение, если пользователь в другой комнате
+            }
+            currentRoom = roomName; // Обновляем текущую комнату
+            document.getElementById("chat-room-name").textContent = roomName; // Отображаем имя комнаты
+            document.getElementById("messages").innerHTML = ""; // Очищаем сообщения
+
+            // Устанавливаем WebSocket с именем комнаты
+            ws = new WebSocket(`ws://${window.location.host}/ws/${roomName}`);
+
+            ws.onmessage = function (event) {
+                const messages = document.getElementById("messages"); // Получаем элемент для отображения сообщений
+                const message = document.createElement("p"); // Создаем новый элемент для сообщения
+                message.textContent = event.data; // Устанавливаем текст сообщения
+                messages.appendChild(message); // Добавляем сообщение в список сообщений
+                messages.scrollTop = messages.scrollHeight; // Автоматическая прокрутка вниз
+            };
+
+            ws.onopen = function () {
+                ws.send("A new user has joined the chat"); // Отправляем уведомление при входе нового пользователя
+            };
+
+            ws.onclose = function () {
+                console.log("Disconnected from room:", roomName); // Логируем отключение от комнаты
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("message-input"); // Получаем элемент ввода сообщения
+            if (ws && input.value) {
+                ws.send(input.value); // Отправляем сообщение
+                input.value = ""; // Очищаем поле ввода
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div class="create-chat-container">
+        <h1>Welcome, {{ user.username }}</h1>
+        <form action="/create-room" method="post"> <!-- Форма для создания новой комнаты -->
+            <input type="text" name="room_name" required placeholder="Ex: Room12345"> <!-- Поле ввода имени комнаты -->
+            <button>Create Room</button>
+        </form>
+    </div>
+
+
+    <div class="chat-window">
+        <div class="chat-header">
+            Current Room: <span id="chat-room-name">None</span>
+        </div>
+        <div id="messages" class="chat-history"></div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type a message..."
+                onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div class="chat-list-container">
+        <div class="chat-list-header">Chat Rooms</div>
+        <div class="user-search">
+            <form action="/search-rooms" method="get"> <!-- Форма для поиска комнат -->
+                <input type="text" name="search_query" placeholder="Search Rooms...">
+                <button>Search</button>
+        </div>
+        <ul class="chat-list">
+            {% for room in rooms %}
+            <li class="chat-item" onclick="joinRoom('{{ room.name }}')">
+                <div class="avatar"></div>
+                <div class="chat-info">
+                    <div class="name">{{ room.name }}</div>
+                    <div class="last-message">Last message here...</div>
+                </div>
+
+                {% if room.owner_id == user.id %} <!-- Проверка, является ли текущий пользователь владельцем комнаты -->
+                <form action="/delete-room" method="post" style="display: inline;">
+                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                    <!-- Скрытое поле для передачи ID комнаты -->
+                    <button type="submit">Delete</button> <!-- Кнопка для удаления комнаты -->
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+
+</html>
